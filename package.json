@@ -1,6 +1,6 @@
 {
   "name": "myapp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
@@ -56,6 +56,7 @@
       "icon": "public/icon.png"
     },
     "nsis": {
+      "artifactName": "Viddax v1.0 Installer.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "runAfterFinish": true
