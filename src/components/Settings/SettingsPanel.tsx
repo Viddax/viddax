@@ -22,8 +22,9 @@ const FilteredSection = ({ title, children, searchQuery }: { title: string, chil
     if (!isTitleMatch) {
       filtered = filtered.filter(child => {
         if (!React.isValidElement(child)) return false;
-        const label = child.props.label || "";
-        const description = child.props.description || "";
+        const element = child as any;
+        const label = element.props?.label || "";
+        const description = element.props?.description || "";
         return label.toLowerCase().includes(q) || description.toLowerCase().includes(q);
       });
     }
