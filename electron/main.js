@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
-const serve = require('electron-serve');
+const serve = require('electron-serve').default || require('electron-serve');
 
 const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
