@@ -1,6 +1,9 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const serve = require('electron-serve');
+
+const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -23,7 +26,7 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://127.0.0.1:3000');
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../out/index.html'));
+    loadURL(mainWindow);
   }
 }
 
