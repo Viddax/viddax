@@ -56,7 +56,8 @@
       "icon": "public/icon.png"
     },
     "nsis": {
-      "oneClick": true,
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
       "runAfterFinish": true
     }
   },
