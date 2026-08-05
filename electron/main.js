@@ -5,6 +5,7 @@ const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
 const { buildYtdlpArgs } = require('./command_builder');
 const serve = require('electron-serve').default || require('electron-serve');
+const os = require('os');
 
 const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
@@ -70,6 +71,13 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
         : path.join(__dirname, '../bin');
       const ytdlpPath = getBinPath('yt-dlp.exe');
       
+      // Override relative path to absolute path to fix production read-only errors
+      let resolvedPath = settings.defaultDownloadPath;
+      if (!resolvedPath || resolvedPath === './downloads' || resolvedPath === 'downloads') {
+        resolvedPath = path.join(os.homedir(), 'Downloads', 'Viddax');
+      }
+      settings.defaultDownloadPath = resolvedPath;
+      
       const args = buildYtdlpArgs(url, settings);
       
       // Point yt-dlp to directory containing both ffmpeg and ffprobe
@@ -117,6 +125,10 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
             speed: '',
             eta: '',
           });
+          
+          // Pop the explorer up at the downloaded location!
+          require('electron').shell.openPath(resolvedPath);
+          
           resolve();
         } else {
           event.sender.send('download-progress', {
