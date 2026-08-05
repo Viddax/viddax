@@ -56,3 +56,12 @@ button {
   color: inherit;
   cursor: pointer;
 }
+
+/* Environment classes */
+html:not(.is-electron) .electron-only {
+  display: none !important;
+}
+
+html.is-electron .web-only {
+  display: none !important;
+}

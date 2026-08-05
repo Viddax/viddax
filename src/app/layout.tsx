@@ -58,7 +58,9 @@ export default function RootLayout({
       <body>
         <ThemeSync />
         <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-          <TitleBar />
+          <div className="electron-only">
+            <TitleBar />
+          </div>
           <div style={{ flex: 1, overflow: 'auto' }}>
             {children}
           </div>

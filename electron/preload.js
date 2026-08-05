@@ -10,3 +10,7 @@ contextBridge.exposeInMainWorld('electron', {
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close')
 });
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.documentElement.classList.add('is-electron');
+});

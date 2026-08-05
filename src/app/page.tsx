@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Settings, Video, Music, Globe, Image as ImageIcon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsPanel } from "@/components/Settings/SettingsPanel";
+import { LandingPage } from "@/components/LandingPage/LandingPage";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useDownloadProgress } from "@/hooks/useDownloadProgress";
 import styles from "./page.module.scss";
@@ -131,11 +132,7 @@ export default function Home() {
     }
   }, [availableModes, downloadMode]);
 
-  if (isSettingsOpen) {
-    return <SettingsPanel onClose={() => setIsSettingsOpen(false)} />;
-  }
-
-  return (
+  const appUI = (
     <main className={styles.container}>
       <div className={styles.topRightActions}>
         <div className={styles.platformsWrapper}>
@@ -263,5 +260,16 @@ export default function Home() {
         </div>
       </div>
     </main>
+  );
+
+  return (
+    <>
+      <div className="web-only" style={{ height: '100vh', width: '100vw', overflow: 'auto' }}>
+        <LandingPage />
+      </div>
+      <div className="electron-only" style={{ height: '100%', width: '100%' }}>
+        {isSettingsOpen ? <SettingsPanel onClose={() => setIsSettingsOpen(false)} /> : appUI}
+      </div>
+    </>
   );
 }
