@@ -41,6 +41,13 @@
     "directories": {
       "output": "release"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "NerdBlud",
+        "repo": "Viddax"
+      }
+    ],
     "files": [
       "out/**/*",
       "electron/**/*",
@@ -56,13 +63,14 @@
       "icon": "public/icon.png"
     },
     "nsis": {
-      "artifactName": "Viddax v1.0 Installer.${ext}",
+      "artifactName": "Viddax v${version} Installer.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "runAfterFinish": true
     }
   },
   "dependencies": {
-    "electron-serve": "^3.0.1"
+    "electron-serve": "^3.0.1",
+    "electron-updater": "^6.8.9"
   }
 }

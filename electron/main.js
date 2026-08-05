@@ -2,6 +2,7 @@
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const { autoUpdater } = require('electron-updater');
 const { buildYtdlpArgs } = require('./command_builder');
 const serve = require('electron-serve').default || require('electron-serve');
 
@@ -35,6 +36,11 @@ function createWindow() {
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   createWindow();
+
+  // Trigger auto-update check silently
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
@@ -153,4 +159,21 @@ ipcMain.on('window-maximize', (event) => {
 ipcMain.on('window-close', (event) => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) win.close();
+});
+
+// Auto-updater IPC forwarding
+autoUpdater.on('update-available', (info) => {
+  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-available', info));
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-progress', progressObj));
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-downloaded', info));
+});
+
+ipcMain.on('restart-app', () => {
+  autoUpdater.quitAndInstall(false, true);
 });
