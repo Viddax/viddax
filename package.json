@@ -57,9 +57,7 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "runAfterFinish": true,
-      "installerIcon": "public/icon.png",
-      "uninstallerIcon": "public/icon.png"
+      "runAfterFinish": true
     }
   }
 }
