@@ -15,8 +15,9 @@ export function useDownloadProgress() {
 
   useEffect(() => {
     // Check if we are running inside Electron
-    if (typeof window !== 'undefined' && (window as any).electron) {
-      (window as any).electron.onDownloadProgress((payload: ProgressPayload) => {
+    if (typeof window !== 'undefined' && 'electron' in window) {
+      // @ts-expect-error - electron is injected by preload script
+      window.electron.onDownloadProgress((payload: ProgressPayload) => {
         setProgress(payload.progress_percent);
         setStatus(payload.status);
         setSpeed(payload.speed);

@@ -6,25 +6,25 @@ import { Minus, Square, X } from 'lucide-react';
 
 export function TitleBar() {
   const handleMinimize = () => {
-    // @ts-ignore
+    // @ts-expect-error - injected
     if (window.electron?.minimizeWindow) {
-      // @ts-ignore
+      // @ts-expect-error - injected
       window.electron.minimizeWindow();
     }
   };
 
   const handleMaximize = () => {
-    // @ts-ignore
+    // @ts-expect-error - injected
     if (window.electron?.maximizeWindow) {
-      // @ts-ignore
+      // @ts-expect-error - injected
       window.electron.maximizeWindow();
     }
   };
 
   const handleClose = () => {
-    // @ts-ignore
+    // @ts-expect-error - injected
     if (window.electron?.closeWindow) {
-      // @ts-ignore
+      // @ts-expect-error - injected
       window.electron.closeWindow();
     }
   };

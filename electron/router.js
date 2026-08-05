@@ -43,7 +43,7 @@ function detectPlatform(url) {
     if (host.includes('kick.com')) return PLATFORMS.KICK;
 
     return PLATFORMS.GENERIC;
-  } catch (err) {
+  } catch {
     // If URL parsing fails, default to generic and let yt-dlp attempt resolution
     return PLATFORMS.GENERIC;
   }

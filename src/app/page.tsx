@@ -26,13 +26,14 @@ export default function Home() {
     setStatus("Starting download engine...");
     
     try {
-      if (typeof window !== 'undefined' && (window as any).electron) {
+      if (typeof window !== 'undefined' && 'electron' in window) {
         // Strip functions from store to prevent IPC cloning errors
         const settingsPayload = JSON.parse(JSON.stringify(store));
         settingsPayload.downloadMode = downloadMode;
         
         // Run real Electron command
-        await (window as any).electron.executeDownload({ 
+        // @ts-expect-error - electron is injected by preload
+        await window.electron.executeDownload({ 
           id: Date.now().toString(),
           url, 
           settings: settingsPayload 
@@ -125,6 +126,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!availableModes.includes(downloadMode)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDownloadMode(availableModes[0]);
     }
   }, [availableModes, downloadMode]);

@@ -22,7 +22,7 @@ const FilteredSection = ({ title, children, searchQuery }: { title: string, chil
     if (!isTitleMatch) {
       filtered = filtered.filter(child => {
         if (!React.isValidElement(child)) return false;
-        const element = child as any;
+        const element = child as React.ReactElement;
         const label = element.props?.label || "";
         const description = element.props?.description || "";
         return label.toLowerCase().includes(q) || description.toLowerCase().includes(q);
@@ -69,6 +69,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
   const [confirmState, setConfirmState] = useState<{isOpen: boolean, message: string, onConfirm: () => void} | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
@@ -141,8 +142,9 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = '.json';
-        input.onchange = (e: any) => {
-          const file = e.target.files[0];
+        input.onchange = (e: Event) => {
+          const target = e.target as HTMLInputElement;
+          const file = target.files?.[0];
           if (!file) return;
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -150,10 +152,10 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               const parsed = JSON.parse(e.target?.result as string);
               Object.keys(parsed).forEach(key => {
                 if (key !== 'setSetting' && key !== 'reset') {
-                  store.setSetting(key as any, parsed[key]);
+                  store.setSetting(key as keyof SettingsState, parsed[key]);
                 }
               });
-            } catch (err) {
+            } catch {
               console.error("Invalid settings file.");
             }
           };

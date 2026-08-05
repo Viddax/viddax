@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const { app, BrowserWindow, ipcMain, Menu } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const { buildYtdlpArgs } = require('./command_builder');
 const serve = require('electron-serve').default || require('electron-serve');
 
 const loadURL = serve({ directory: path.join(__dirname, '../out') });
@@ -46,9 +48,6 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-const { buildYtdlpArgs } = require('./command_builder');
-const fs = require('fs');
 
 const getBinPath = (filename) => {
   const base = app.isPackaged 
