@@ -37,6 +37,7 @@
   "build": {
     "appId": "com.nerdblud.viddax",
     "productName": "Viddax",
+    "compression": "maximum",
     "directories": {
       "output": "release"
     },
