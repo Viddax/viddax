@@ -1,0 +1,38 @@
+name: Build and Release Windows EXE
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers the workflow when you push a tag like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    # We need write permissions to create a GitHub Release
+    permissions:
+      contents: write
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build Next.js and Electron Executable
+        run: npm run electron:build
+
+      - name: Create GitHub Release and Upload EXE
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

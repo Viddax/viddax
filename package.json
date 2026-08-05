@@ -1,0 +1,59 @@
+{
+  "name": "myapp",
+  "version": "0.1.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "next dev -H 127.0.0.1",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://127.0.0.1:3000 && cross-env NODE_ENV=development electron .\"",
+    "electron:build": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "ffprobe-static": "^3.1.0",
+    "framer-motion": "^12.43.0",
+    "lucide-react": "^1.28.0",
+    "next": "16.3.0",
+    "png-to-ico": "^3.0.2",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "sass": "^1.102.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "concurrently": "^10.0.4",
+    "cross-env": "^7.0.3",
+    "electron": "^43.3.0",
+    "electron-builder": "^26.15.3",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.0",
+    "typescript": "^5",
+    "wait-on": "^9.1.0"
+  },
+  "build": {
+    "appId": "com.nerdblud.viddax",
+    "productName": "Viddax",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "out/**/*",
+      "electron/**/*",
+      "bin/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "bin/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

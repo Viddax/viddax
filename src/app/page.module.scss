@@ -1,0 +1,483 @@
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 24px;
+}
+
+.topRightActions {
+  position: absolute;
+  top: 48px;
+  right: 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  z-index: 50;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.iconButton {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--surface-color);
+  color: var(--text-muted);
+  border: 1px solid var(--border-subtle);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
+    border-color: rgba(128, 128, 128, 0.3);
+    transform: rotate(15deg);
+  }
+
+  &.active {
+    color: var(--bg-color);
+    background-color: var(--text-main);
+    border-color: transparent;
+    transform: rotate(0);
+  }
+}
+
+.mainContent {
+  width: 100%;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 32px;
+  animation: fadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.header {
+  h1 {
+    font-family: var(--font-logo);
+    font-size: 4.5rem;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    margin: 0;
+    line-height: 1;
+    color: var(--text-main);
+    animation: titleReveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+// ─── Mode Toggle (Video / Audio) ────────────────────────────────────
+.modeToggle {
+  display: flex;
+  position: relative;
+  padding: 3px;
+  background: var(--surface-color);
+  border-radius: 9999px;
+  border: 1px solid var(--border-subtle);
+  backdrop-filter: blur(12px);
+  animation: fadeSlideUp 0.6s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.modeButton {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 24px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-main);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+  flex: 1;
+
+  .modeContent {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    
+    svg {
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  }
+
+  &:hover {
+    color: var(--text-main);
+    
+    .modeContent svg {
+      transform: scale(1.1);
+    }
+  }
+
+  &.active {
+    color: var(--bg-color);
+
+    .modeContent svg {
+      transform: scale(1.15);
+    }
+  }
+}
+
+.activePill {
+  position: absolute;
+  inset: 0;
+  background: var(--text-main);
+  border-radius: 9999px;
+  z-index: 0;
+}
+
+// ─── Input Bar ──────────────────────────────────────────────────────
+.inputWrapper {
+  width: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.inputGroup {
+  width: 100%;
+  display: flex;
+  gap: 0;
+  position: relative;
+  background: var(--bg-color);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+  padding: 6px;
+  transition: box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: fadeSlideUp 0.6s 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+  
+  &:focus-within {
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.06);
+    border-color: rgba(128, 128, 128, 0.15);
+    transform: scale(1.005);
+  }
+  
+  input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 14px 28px;
+    font-size: 1rem;
+    font-family: var(--font-main);
+    color: var(--text-main);
+    outline: none;
+    letter-spacing: -0.01em;
+    
+    &::placeholder {
+      color: var(--text-muted);
+      transition: color 0.3s ease;
+    }
+
+    &:focus::placeholder {
+      color: rgba(128, 128, 128, 0.25);
+    }
+  }
+  
+  .fetchButton {
+    background-color: var(--text-main);
+    color: var(--bg-color);
+    padding: 14px 36px;
+    border-radius: 9999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: -0.01em;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease,
+                opacity 0.3s ease;
+    
+    &:hover {
+      transform: scale(1.04);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+    
+    &:active {
+      transform: scale(0.97);
+    }
+    
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.platformDetector {
+  position: absolute;
+  top: calc(100% + 16px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 18px;
+  background: var(--surface-color);
+  border: 1px solid var(--border-subtle);
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-main);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  
+  strong {
+    color: var(--text-main);
+    font-weight: 600;
+  }
+}
+
+.glowingDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--text-main);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.4), 0 0 16px rgba(255, 255, 255, 0.2);
+  animation: pulseLight 1.5s ease-in-out infinite;
+
+  &.error {
+    background-color: #ef4444;
+    box-shadow: 0 0 8px #ef4444, 0 0 16px rgba(239, 68, 68, 0.6);
+  }
+}
+
+@keyframes pulseLight {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+// ─── Progress ───────────────────────────────────────────────────────
+.progressArea {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  
+  &.visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  
+  .track {
+    width: 100%;
+    height: 3px;
+    background-color: var(--surface-color);
+    border-radius: 9999px;
+    overflow: hidden;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.15) 50%,
+        transparent 100%
+      );
+      animation: shimmer 2s infinite linear;
+    }
+  }
+  
+  .bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--text-main);
+    border-radius: 9999px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 12px rgba(128, 128, 128, 0.2);
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-main);
+      box-shadow: 0 0 8px var(--text-main), 0 0 20px var(--text-main);
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+  }
+  
+  .status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    animation: statusFade 0.4s ease forwards;
+  }
+
+  .meta {
+    opacity: 0.5;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+// ─── Keyframes ──────────────────────────────────────────────────────
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes titleReveal {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.5);
+  }
+}
+
+@keyframes statusFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ─── Supported Platforms ────────────────────────────────────────────
+.platformsWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.platformsList {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  width: max-content;
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(12px);
+  margin-bottom: 0;
+
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px 24px;
+    
+    li {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      position: relative;
+      padding-left: 12px;
+      transition: color 0.2s ease;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 4px;
+        border-radius: 50%;
+        background-color: var(--text-main);
+        opacity: 0.5;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+
+      &:hover {
+        color: var(--text-main);
+        
+        &::before {
+          opacity: 1;
+          transform: translateY(-50%) scale(1.5);
+        }
+      }
+    }
+  }
+}

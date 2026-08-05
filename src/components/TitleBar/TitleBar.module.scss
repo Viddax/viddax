@@ -1,0 +1,71 @@
+.titlebar {
+  display: flex;
+  height: 32px;
+  background-color: var(--bg-primary); // Inherit the dark mode background
+  border-bottom: 1px solid var(--border-color);
+  user-select: none;
+  flex-shrink: 0;
+  z-index: 9999;
+}
+
+.dragRegion {
+  flex: 1;
+  -webkit-app-region: drag; /* This makes the window draggable! */
+  display: flex;
+  align-items: center;
+  padding-left: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand {
+  font-family: var(--font-logo);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.controls {
+  display: flex;
+  -webkit-app-region: no-drag; /* Buttons must not be draggable */
+}
+
+.controlButton {
+  width: 46px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+  }
+
+  &:active {
+    background-color: rgba(255, 255, 255, 0.15);
+  }
+}
+
+.closeButton {
+  &:hover {
+    background-color: #e81123;
+    color: white;
+  }
+  
+  &:active {
+    background-color: #f1707a;
+    color: white;
+  }
+}
