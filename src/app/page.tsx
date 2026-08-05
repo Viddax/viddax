@@ -93,6 +93,13 @@ export default function Home() {
     if (l.includes('tumblr.com')) return 'Tumblr';
     if (l.includes('kick.com')) return 'Kick';
     if (l.includes('streamable.com')) return 'Streamable';
+    if (l.includes('snapchat.com')) return 'Snapchat';
+    if (l.includes('vimeo.com')) return 'Vimeo';
+    if (l.includes('dailymotion.com') || l.includes('dai.ly')) return 'Dailymotion';
+    if (l.includes('bilibili.com') || l.includes('bilibili.tv')) return 'Bilibili';
+    if (l.includes('mixcloud.com')) return 'Mixcloud';
+    if (l.includes('apple.com') && (l.includes('/music') || l.includes('/podcast'))) return 'Apple Music/Podcasts';
+    if (l.includes('patreon.com')) return 'Patreon';
     return null;
   };
 
@@ -102,21 +109,28 @@ export default function Home() {
     switch (platform) {
       case 'Spotify':
       case 'SoundCloud':
+      case 'Mixcloud':
+      case 'Apple Music/Podcasts':
         return ['audio'];
       case 'Instagram':
       case 'Reddit':
       case 'Pinterest':
       case 'X / Twitter':
       case 'Tumblr':
-        return ['video', 'image'];
+      case 'Snapchat':
+      case 'Patreon':
+        return ['video', 'image', 'audio'];
       case 'YouTube':
       case 'TikTok':
+      case 'Bilibili':
         return ['video', 'audio', 'image'];
       case 'Facebook':
       case 'Twitch':
       case 'VK':
       case 'Streamable':
       case 'Kick':
+      case 'Vimeo':
+      case 'Dailymotion':
         return ['video', 'audio'];
       default:
         return ['video', 'audio', 'image'];
@@ -159,6 +173,7 @@ export default function Home() {
                   <li>TikTok</li>
                   <li>Instagram</li>
                   <li>Reddit</li>
+                  <li>X / Twitter</li>
                   <li>Facebook</li>
                   <li>Twitch</li>
                   <li>VK</li>
@@ -168,6 +183,13 @@ export default function Home() {
                   <li>Spotify</li>
                   <li>Tumblr</li>
                   <li>Kick</li>
+                  <li>Snapchat</li>
+                  <li>Vimeo</li>
+                  <li>Dailymotion</li>
+                  <li>Bilibili</li>
+                  <li>Mixcloud</li>
+                  <li>Apple Music/Podcasts</li>
+                  <li>Patreon</li>
                 </ul>
               </motion.div>
             )}

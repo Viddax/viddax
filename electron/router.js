@@ -15,6 +15,13 @@ const PLATFORMS = {
   SPOTIFY: 'Spotify',
   TUMBLR: 'Tumblr',
   KICK: 'Kick',
+  SNAPCHAT: 'Snapchat',
+  VIMEO: 'Vimeo',
+  DAILYMOTION: 'Dailymotion',
+  BILIBILI: 'Bilibili',
+  MIXCLOUD: 'Mixcloud',
+  APPLE: 'Apple Music/Podcasts',
+  PATREON: 'Patreon',
   GENERIC: 'Generic'
 };
 
@@ -41,6 +48,13 @@ function detectPlatform(url) {
     if (host.includes('spotify.com')) return PLATFORMS.SPOTIFY;
     if (host.includes('tumblr.com')) return PLATFORMS.TUMBLR;
     if (host.includes('kick.com')) return PLATFORMS.KICK;
+    if (host.includes('snapchat.com')) return PLATFORMS.SNAPCHAT;
+    if (host.includes('vimeo.com')) return PLATFORMS.VIMEO;
+    if (host.includes('dailymotion.com') || host.includes('dai.ly')) return PLATFORMS.DAILYMOTION;
+    if (host.includes('bilibili.com') || host.includes('bilibili.tv')) return PLATFORMS.BILIBILI;
+    if (host.includes('mixcloud.com')) return PLATFORMS.MIXCLOUD;
+    if (host.includes('apple.com') && (parsedUrl.pathname.includes('/music') || parsedUrl.pathname.includes('/podcast'))) return PLATFORMS.APPLE;
+    if (host.includes('patreon.com')) return PLATFORMS.PATREON;
 
     return PLATFORMS.GENERIC;
   } catch {

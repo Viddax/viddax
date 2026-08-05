@@ -80,6 +80,11 @@ Some of the most popular platforms with optimized detection include:
 - **Facebook**
 - **Twitch** (VODs and Clips)
 - **Spotify** & **SoundCloud**
+- **Snapchat** (Spotlight & Stories)
+- **Vimeo** & **Dailymotion**
+- **Bilibili**
+- **Mixcloud** & **Apple Music/Podcasts**
+- **Patreon**
 
 ---
 
