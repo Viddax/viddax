@@ -1,10 +1,10 @@
 import type { NextConfig } from "next";
 
-const isGithubActions = process.env.GITHUB_ACTIONS || false;
+const isGithubPages = process.env.IS_GITHUB_PAGES === 'true';
 
 const nextConfig: NextConfig = {
   output: "export",
-  basePath: isGithubActions ? '/viddax' : '',
+  basePath: isGithubPages ? '/viddax' : '',
   typescript: {
     ignoreBuildErrors: true,
   }
