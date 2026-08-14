@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Settings, Video, Music, Globe, Image as ImageIcon } from "lucide-react";
+import { Settings, Video, Music, Globe, Image as ImageIcon, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SettingsPanel } from "@/components/Settings/SettingsPanel";
 import { LandingPage } from "@/components/LandingPage/LandingPage";
@@ -195,6 +195,20 @@ export default function Home() {
             )}
           </AnimatePresence>
         </div>
+
+        <button 
+          className={styles.iconButton} 
+          onClick={() => {
+            const current = store.themeMode;
+            if (current === 'dark') store.setSetting('themeMode', 'light');
+            else if (current === 'light') store.setSetting('themeMode', 'auto');
+            else store.setSetting('themeMode', 'dark');
+          }}
+          aria-label="Toggle Theme"
+          type="button"
+        >
+          {store.themeMode === 'dark' ? <Sun size={20} strokeWidth={1.5} /> : store.themeMode === 'light' ? <Moon size={20} strokeWidth={1.5} /> : <span style={{fontSize: '0.7rem', fontWeight: 'bold'}}>AUTO</span>}
+        </button>
 
         <button 
           className={styles.iconButton} 

@@ -59,8 +59,9 @@ function buildYtdlpArgs(url, settings) {
   }
 
   // 2. JavaScript Runtime (required for YouTube anti-bot challenges)
-  // Node.js is always available since we're running inside Electron
-  args.push('--js-runtimes', 'node');
+  // In production, Node.js is not globally available in the PATH for users.
+  // We rely on yt-dlp's built-in phantomjs/jsc fallbacks if available.
+  // args.push('--js-runtimes', 'node');
 
   // 3. Power User Features — Cookies
   // YouTube now requires authentication to bypass bot detection.
@@ -75,11 +76,8 @@ function buildYtdlpArgs(url, settings) {
   }
 
   // 3. Platform Specifics
-  if (platform === PLATFORMS.TIKTOK || platform === PLATFORMS.INSTAGRAM) {
-    // Inject bypass extractor args for unwatermarked/high-res media
-    if (platform === PLATFORMS.TIKTOK) {
-      args.push('--extractor-args', 'tiktok:api_hostname=api16-normal-c-useast1a.tiktokv.com');
-    }
+  if (platform === PLATFORMS.INSTAGRAM) {
+    // Left empty for future instagram specifics
   }
 
   // 4. Output Pathing

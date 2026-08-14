@@ -116,7 +116,7 @@ const initialState: Omit<SettingsState, 'setSetting' | 'reset'> = {
   embedThumbnail: true,
   splitByChapters: false,
   
-  useCookies: true,
+  useCookies: false,
   browserIdentity: 'chrome',
 };
 

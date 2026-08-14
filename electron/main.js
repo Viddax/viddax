@@ -78,6 +78,12 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
       }
       settings.defaultDownloadPath = resolvedPath;
       
+      // Ensure the download directory exists! If it doesn't, yt-dlp exits with code 1.
+      const fs = require('fs');
+      if (!fs.existsSync(resolvedPath)) {
+        fs.mkdirSync(resolvedPath, { recursive: true });
+      }
+      
       const args = buildYtdlpArgs(url, settings);
       
       // Point yt-dlp to directory containing both ffmpeg and ffprobe
@@ -112,8 +118,14 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
         }
       });
 
+      let lastStderr = '';
+
       child.stderr.on('data', (data) => {
-        console.error(`yt-dlp stderr [${id}]: ${data}`);
+        const errorText = data.toString();
+        console.error(`yt-dlp stderr [${id}]: ${errorText}`);
+        if (!errorText.includes('has already been downloaded') && !errorText.includes('ExtractAudio')) {
+            lastStderr = errorText.trim().substring(0, 100);
+        }
       });
 
       child.on('close', (code) => {
@@ -133,12 +145,12 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
         } else {
           event.sender.send('download-progress', {
             id,
-            status: 'Error',
+            status: `Error: ${code} ${lastStderr ? '- ' + lastStderr : ''}`,
             progress_percent: 0,
             speed: '',
             eta: '',
           });
-          reject(`yt-dlp exited with code ${code}`);
+          reject(`yt-dlp exited with code ${code}. ${lastStderr}`);
         }
       });
 
