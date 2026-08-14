@@ -90,7 +90,12 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
       args.push('--ffmpeg-location', binDir);
       
       // Spawn bundled yt-dlp natively
-      const child = spawn(ytdlpPath, args);
+      const child = spawn(ytdlpPath, args, {
+        env: {
+          ...process.env,
+          ELECTRON_RUN_AS_NODE: '1'
+        }
+      });
 
       // Regex to match [download] 45.3% of ~50.00MiB at 2.00MiB/s ETA 00:25
       const re = /\[download\]\s+([0-9.]+)% .*?at\s+([0-9.a-zA-Z/]+)\s+ETA\s+([0-9:]+)/;

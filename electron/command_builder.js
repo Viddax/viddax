@@ -60,8 +60,8 @@ function buildYtdlpArgs(url, settings) {
 
   // 2. JavaScript Runtime (required for YouTube anti-bot challenges)
   // In production, Node.js is not globally available in the PATH for users.
-  // We rely on yt-dlp's built-in phantomjs/jsc fallbacks if available.
-  // args.push('--js-runtimes', 'node');
+  // We use the Electron executable itself as the Node runtime!
+  args.push('--js-runtimes', `node:${process.execPath}`);
 
   // 3. Power User Features — Cookies
   // YouTube now requires authentication to bypass bot detection.
