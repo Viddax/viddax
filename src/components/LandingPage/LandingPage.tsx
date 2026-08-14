@@ -58,7 +58,7 @@ export function LandingPage() {
             transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.3 }}
             className={styles.ctaWrapper}
           >
-            <a href="https://github.com/NerdBlud/Viddax/releases/latest" className={styles.downloadButton}>
+            <a href="https://github.com/viddax/viddax/releases/latest" className={styles.downloadButton}>
               <Download size={18} strokeWidth={2.5} />
               <span>Download for Windows</span>
             </a>

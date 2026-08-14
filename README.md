@@ -10,7 +10,7 @@
   [![Electron](https://img.shields.io/badge/Electron-33-47848f.svg?style=flat-square&logo=electron)](https://www.electronjs.org/)
   [![yt-dlp](https://img.shields.io/badge/Powered%20by-yt--dlp-red.svg?style=flat-square)](https://github.com/yt-dlp/yt-dlp)
   <br />
-  [![Website](https://img.shields.io/badge/Website-Live-brightgreen.svg?style=flat-square&logo=vercel)](https://nerdblud.github.io/Viddax)
+  [![Website](https://img.shields.io/badge/Website-Live-brightgreen.svg?style=flat-square&logo=vercel)](https://viddax.github.io/viddax)
 
 </div>
 
