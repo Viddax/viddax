@@ -34,11 +34,23 @@ function createWindow() {
   }
 }
 
+function autoUpdateYtdlp() {
+  try {
+    const ytdlpPath = getBinPath('yt-dlp.exe');
+    const updateProc = spawn(ytdlpPath, ['-U']);
+    updateProc.stdout.on('data', (d) => console.log(`yt-dlp update: ${d}`));
+    updateProc.stderr.on('data', (d) => console.error(`yt-dlp update err: ${d}`));
+  } catch (err) {
+    console.error('Failed to trigger yt-dlp auto-update:', err);
+  }
+}
+
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
   createWindow();
 
-  // Trigger auto-update check silently
+  // Trigger silent auto-updates on startup
+  autoUpdateYtdlp();
   if (!isDev) {
     autoUpdater.checkForUpdatesAndNotify();
   }
@@ -84,84 +96,115 @@ ipcMain.handle('execute_download', (event, { id, url, settings }) => {
         fs.mkdirSync(resolvedPath, { recursive: true });
       }
       
-      const args = buildYtdlpArgs(url, settings);
+      const initialArgs = buildYtdlpArgs(url, settings);
       
       // Point yt-dlp to directory containing both ffmpeg and ffprobe
-      args.push('--ffmpeg-location', binDir);
-      
-      // Spawn bundled yt-dlp natively
-      const child = spawn(ytdlpPath, args, {
-        env: {
-          ...process.env,
-          ELECTRON_RUN_AS_NODE: '1'
-        }
-      });
+      initialArgs.push('--ffmpeg-location', binDir);
 
-      // Regex to match [download] 45.3% of ~50.00MiB at 2.00MiB/s ETA 00:25
-      const re = /\[download\]\s+([0-9.]+)% .*?at\s+([0-9.a-zA-Z/]+)\s+ETA\s+([0-9:]+)/;
+      const runProcess = (processArgs, isRetry = false) => {
+        const child = spawn(ytdlpPath, processArgs, {
+          env: {
+            ...process.env,
+            ELECTRON_RUN_AS_NODE: '1'
+          }
+        });
 
-      child.stdout.on('data', (data) => {
-        const line = data.toString();
-        const match = line.match(re);
+        // Regex to match [download] 45.3% of ~50.00MiB at 2.00MiB/s ETA 00:25
+        const re = /\[download\]\s+([0-9.]+)% .*?at\s+([0-9.a-zA-Z/]+)\s+ETA\s+([0-9:]+)/;
 
-        if (match) {
-          event.sender.send('download-progress', {
-            id,
-            status: 'Downloading...',
-            progress_percent: parseFloat(match[1]),
-            speed: match[2],
-            eta: match[3],
-          });
-        } else if (line.includes('[ExtractAudio]') || line.includes('[Merger]') || line.includes('[ffmpeg]')) {
-          event.sender.send('download-progress', {
-            id,
-            status: 'Processing (Merging/Audio)...',
-            progress_percent: 100.0,
-            speed: '',
-            eta: '',
-          });
-        }
-      });
+        child.stdout.on('data', (data) => {
+          const line = data.toString();
+          const match = line.match(re);
 
-      let lastStderr = '';
+          if (match) {
+            event.sender.send('download-progress', {
+              id,
+              status: 'Downloading...',
+              progress_percent: parseFloat(match[1]),
+              speed: match[2],
+              eta: match[3],
+            });
+          } else if (line.includes('[ExtractAudio]') || line.includes('[Merger]') || line.includes('[ffmpeg]')) {
+            event.sender.send('download-progress', {
+              id,
+              status: 'Processing (Merging/Audio)...',
+              progress_percent: 100.0,
+              speed: '',
+              eta: '',
+            });
+          } else if (line.includes('Writing video thumbnail') || line.includes('[ThumbnailsConvertor]')) {
+            event.sender.send('download-progress', {
+              id,
+              status: 'Saving thumbnail image...',
+              progress_percent: 100.0,
+              speed: '',
+              eta: '',
+            });
+          }
+        });
 
-      child.stderr.on('data', (data) => {
-        const errorText = data.toString();
-        console.error(`yt-dlp stderr [${id}]: ${errorText}`);
-        if (!errorText.includes('has already been downloaded') && !errorText.includes('ExtractAudio')) {
-            lastStderr = errorText.trim().substring(0, 100);
-        }
-      });
+        let lastStderr = '';
 
-      child.on('close', (code) => {
-        if (code === 0) {
-          event.sender.send('download-progress', {
-            id,
-            status: 'Completed',
-            progress_percent: 100.0,
-            speed: '',
-            eta: '',
-          });
-          
-          // Pop the explorer up at the downloaded location!
-          require('electron').shell.openPath(resolvedPath);
-          
-          resolve();
-        } else {
-          event.sender.send('download-progress', {
-            id,
-            status: `Error: ${code} ${lastStderr ? '- ' + lastStderr : ''}`,
-            progress_percent: 0,
-            speed: '',
-            eta: '',
-          });
-          reject(`yt-dlp exited with code ${code}. ${lastStderr}`);
-        }
-      });
+        child.stderr.on('data', (data) => {
+          const errorText = data.toString();
+          console.error(`yt-dlp stderr [${id}]: ${errorText}`);
+          if (!errorText.includes('has already been downloaded') && !errorText.includes('ExtractAudio')) {
+            lastStderr = errorText.trim().substring(0, 150);
+          }
+        });
 
-      child.on('error', (err) => {
-        reject(`Failed to start yt-dlp: ${err.message}`);
-      });
+        child.on('close', (code) => {
+          if (code === 0) {
+            event.sender.send('download-progress', {
+              id,
+              status: 'Completed',
+              progress_percent: 100.0,
+              speed: '',
+              eta: '',
+            });
+            
+            // Pop the explorer up at the downloaded location!
+            require('electron').shell.openPath(resolvedPath);
+            resolve();
+          } else {
+            // Gracefully retry without cookies if cookie extraction caused the failure
+            const lowerError = lastStderr.toLowerCase();
+            const isCookieError = lowerError.includes('cookie') || 
+                                  lowerError.includes('unsupported platform') || 
+                                  lowerError.includes('could not find');
+            const cookieIdx = processArgs.indexOf('--cookies-from-browser');
+
+            if (!isRetry && cookieIdx !== -1 && isCookieError) {
+              console.warn(`[${id}] Cookie extraction failed, falling back without cookies...`);
+              event.sender.send('download-progress', {
+                id,
+                status: 'Browser cookies failed, retrying directly...',
+                progress_percent: 0,
+                speed: '',
+                eta: '',
+              });
+              const retryArgs = [...processArgs];
+              retryArgs.splice(cookieIdx, 2);
+              return runProcess(retryArgs, true);
+            }
+
+            event.sender.send('download-progress', {
+              id,
+              status: `Error: ${code} ${lastStderr ? '- ' + lastStderr : ''}`,
+              progress_percent: 0,
+              speed: '',
+              eta: '',
+            });
+            reject(`yt-dlp exited with code ${code}. ${lastStderr}`);
+          }
+        });
+
+        child.on('error', (err) => {
+          reject(`Failed to start yt-dlp: ${err.message}`);
+        });
+      };
+
+      runProcess(initialArgs);
     } catch (e) {
       reject(`Failed to setup download engine: ${e.message}`);
     }

@@ -25,7 +25,7 @@ function buildYtdlpArgs(url, settings) {
 
   args.push(targetUrl);
 
-  // 1. Download Mode: Audio-only vs Video
+  // 1. Download Mode: Audio-only vs Video vs Image
   if (settings.downloadMode === 'audio') {
     // Audio-only extraction
     args.push('-x'); // extract audio
@@ -35,6 +35,9 @@ function buildYtdlpArgs(url, settings) {
       const bitrate = settings.audioBitrate.replace('kbps', '');
       args.push('--audio-quality', `${bitrate}K`);
     }
+  } else if (settings.downloadMode === 'image') {
+    // Image / Thumbnail extraction mode
+    args.push('--write-thumbnail', '--skip-download', '--convert-thumbnails', 'jpg');
   } else {
     // Video mode — Quality & Format Merging
     let formatString = 'bestvideo+bestaudio/best';
@@ -46,8 +49,14 @@ function buildYtdlpArgs(url, settings) {
       switch (settings.videoQuality) {
         case '8k+': formatString = 'bestvideo[height<=4320]+bestaudio/best'; break;
         case '4k': formatString = 'bestvideo[height<=2160]+bestaudio/best'; break;
+        case '1440p': formatString = 'bestvideo[height<=1440]+bestaudio/best'; break;
         case '1080p': formatString = 'bestvideo[height<=1080]+bestaudio/best'; break;
         case '720p': formatString = 'bestvideo[height<=720]+bestaudio/best'; break;
+        case '480p': formatString = 'bestvideo[height<=480]+bestaudio/best'; break;
+        case '360p': formatString = 'bestvideo[height<=360]+bestaudio/best'; break;
+        case '240p': formatString = 'bestvideo[height<=240]+bestaudio/best'; break;
+        case '144p': formatString = 'bestvideo[height<=144]+bestaudio/best'; break;
+        default: formatString = 'bestvideo+bestaudio/best'; break;
       }
     }
     
@@ -64,9 +73,8 @@ function buildYtdlpArgs(url, settings) {
   args.push('--js-runtimes', `node:${process.execPath}`);
 
   // 3. Power User Features — Cookies
-  // YouTube now requires authentication to bypass bot detection.
-  // Default to chrome cookies unless the user explicitly disabled it.
-  if (settings.useCookies !== false) {
+  // Allow passing browser cookies when enabled in settings
+  if (settings.useCookies === true) {
     const browser = settings.browserIdentity || 'chrome';
     args.push('--cookies-from-browser', browser);
   }
