@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Minus, Square, X } from 'lucide-react';
 import styles from './TitleBar.module.scss';
 
@@ -42,6 +42,9 @@ function updateMessage(state: UpdateState) {
 export function TitleBar() {
   const [update, setUpdate] = useState<UpdateState>();
   const [message, setMessage] = useState('');
+  const [updatesOpen, setUpdatesOpen] = useState(false);
+  const updatesRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const controls = desktop();
@@ -61,6 +64,27 @@ export function TitleBar() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!updatesOpen) return;
+    const dismissOutside = (event: PointerEvent) => {
+      if (event.target instanceof Node && !updatesRef.current?.contains(event.target)) {
+        setUpdatesOpen(false);
+      }
+    };
+    const dismissWithEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setUpdatesOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+    document.addEventListener('pointerdown', dismissOutside);
+    document.addEventListener('keydown', dismissWithEscape);
+    return () => {
+      document.removeEventListener('pointerdown', dismissOutside);
+      document.removeEventListener('keydown', dismissWithEscape);
+    };
+  }, [updatesOpen]);
+
   const handleInstall = async () => {
     setMessage('');
     try {
@@ -78,14 +102,20 @@ export function TitleBar() {
     <div className={styles.titlebar}>
       <div className={styles.dragRegion}>
         <span className={styles.brand}>Viddax</span>
-      </div>
-      <div className={styles.controls}>
         {update && (
-          <details className={styles.updates}>
-            <summary className={update.phase === 'ready' ? styles.ready : undefined}>
+          <div className={styles.updates} ref={updatesRef}>
+            <button
+              type="button"
+              ref={triggerRef}
+              className={`${styles.versionButton} ${update.phase === 'ready' ? styles.ready : ''}`}
+              aria-label={`Viddax v${update.currentVersion} updates`}
+              aria-expanded={updatesOpen}
+              aria-controls="viddax-updates"
+              onClick={() => setUpdatesOpen((open) => !open)}
+            >
               {update.phase === 'ready' ? 'Update ready' : update.phase === 'downloading' ? `Updating · ${update.percent}%` : `v${update.currentVersion}`}
-            </summary>
-            <div className={styles.updatePanel}>
+            </button>
+            <div id="viddax-updates" className={styles.updatePanel} data-open={updatesOpen} inert={!updatesOpen}>
               <strong>Viddax v{update.currentVersion}</strong>
               <p role="status">{updateMessage(update)}</p>
               {message && <p role="status">{message}</p>}
@@ -103,8 +133,10 @@ export function TitleBar() {
                 }}>What’s new</button>
               </div>
             </div>
-          </details>
+          </div>
         )}
+      </div>
+      <div className={styles.controls}>
         <button className={styles.controlButton} onClick={() => desktop()?.minimizeWindow()} aria-label="Minimize">
           <Minus size={18} strokeWidth={1.5} />
         </button>

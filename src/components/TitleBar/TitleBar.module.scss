@@ -1,11 +1,12 @@
 .titlebar {
+  position: relative;
   display: flex;
   height: 32px;
   background-color: var(--bg-color);
   border-bottom: 1px solid var(--border-subtle);
   user-select: none;
   flex-shrink: 0;
-  z-index: 9999;
+  z-index: 10000;
 }
 
 .dragRegion {
@@ -13,6 +14,7 @@
   -webkit-app-region: drag; /* This makes the window draggable! */
   display: flex;
   align-items: center;
+  gap: 12px;
   padding-left: 16px;
 }
 
@@ -33,28 +35,37 @@
 
 .updates {
   position: relative;
-  margin-right: 8px;
+  -webkit-app-region: no-drag;
   color: var(--text-main);
   font-size: 12px;
+}
 
-  summary {
-    list-style: none;
-    padding: 3px 10px;
-    border-radius: 12px;
-    background: var(--surface-color);
-    cursor: pointer;
+.versionButton {
+  padding: 3px 10px;
+  border-radius: 12px;
+  background-color: #e8e8e8;
+  white-space: nowrap;
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
   }
 
-  summary.ready {
+  &.ready {
     background: #22c55e;
     color: #000;
   }
 }
 
+:global([data-theme='dark']) .versionButton:not(.ready) {
+  background-color: #303030;
+}
+
 .updatePanel {
   position: absolute;
   top: calc(100% + 8px);
-  right: 0;
+  left: 0;
+  z-index: 1;
   width: max-content;
   max-width: min(340px, calc(100vw - 155px));
   padding: 14px;
@@ -62,6 +73,22 @@
   border-radius: 10px;
   background: var(--bg-color);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-5px) scale(0.98);
+  transform-origin: top left;
+  transition: opacity 160ms ease, transform 160ms ease, visibility 0s linear 160ms;
+
+  &[data-open='true'] {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition-delay: 0s;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
 
   p {
     margin: 8px 0 12px;

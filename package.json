@@ -10,7 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "electron:dev": "cross-env NEXT_PUBLIC_VIDDAX_DESKTOP=true concurrently \"npm run dev\" \"wait-on http://127.0.0.1:3000 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "cross-env NEXT_PUBLIC_VIDDAX_DESKTOP=true npm run build && electron-builder -p never"
+    "electron:build": "node installer/build-ui.js && cross-env NEXT_PUBLIC_VIDDAX_DESKTOP=true npm run build && electron-builder -p never"
   },
   "devDependencies": {
     "@types/node": "^20",

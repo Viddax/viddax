@@ -11,6 +11,7 @@ function buildYtdlpArgs(url, settings) {
   const rateLimited = settings.rateLimit && settings.rateLimit !== 'unlimited';
   const imageMode = settings.downloadMode === 'image';
   const args = [
+    '--no-playlist',
     '--newline', '--no-colors', '--progress-delta', '0.25',
     '--progress-template', 'download:VIDDAX_PROGRESS:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
     '--js-runtimes', `node:${process.execPath}`,

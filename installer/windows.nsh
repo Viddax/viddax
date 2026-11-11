@@ -1,3 +1,38 @@
+!macro RunViddaxSetup MODE EXE EXISTING
+  InitPluginsDir
+  SetOutPath "$PLUGINSDIR"
+  File "/oname=$PLUGINSDIR\ViddaxSetup.exe" "${BUILD_RESOURCES_DIR}\viddax-setup-ui.exe"
+  ClearErrors
+  ExecWait '"$PLUGINSDIR\ViddaxSetup.exe" ${MODE} "${EXE}" "$INSTDIR" "${VERSION}" "${EXISTING}" "$installMode"' $0
+  ${if} ${Errors}
+    MessageBox MB_ICONSTOP "The Viddax setup interface could not start."
+    SetErrorLevel 1
+  ${else}
+    SetErrorLevel $0
+  ${endif}
+  Quit
+!macroend
+
+!macro preInit
+  !ifndef BUILD_UNINSTALLER
+    ${if} ${isUpdated}
+      SetSilent silent
+    ${endif}
+    ${ifNot} ${Silent}
+      !insertmacro check64BitAndSetRegView
+      !insertmacro initMultiUser
+      IntOp $R0 $hasPerUserInstallation + $hasPerMachineInstallation
+      !insertmacro RunViddaxSetup install "$EXEPATH" "$R0"
+    ${endif}
+  !endif
+!macroend
+
+!macro customUnInit
+  ${ifNot} ${Silent}
+    !insertmacro RunViddaxSetup uninstall "$INSTDIR\${UNINSTALL_FILENAME}" "1"
+  ${endif}
+!macroend
+
 !macro customInstall
   Push $0
   SetOutPath "$INSTDIR"
