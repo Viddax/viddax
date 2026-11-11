@@ -1,13 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Settings, Video, Music, Globe, Image as ImageIcon, Sun, Moon } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { SettingsPanel } from "@/components/Settings/SettingsPanel";
 import { LandingPage } from "@/components/LandingPage/LandingPage";
 import { useSettingsStore } from "@/store/useSettingsStore";
 import { useDownloadProgress } from "@/hooks/useDownloadProgress";
 import styles from "./page.module.scss";
+
+const SettingsPanel = lazy(() =>
+  import("@/components/Settings/SettingsPanel").then(({ SettingsPanel }) => ({ default: SettingsPanel }))
+);
 
 export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -41,6 +44,7 @@ export default function Home() {
         });
         setStatus("Download complete!");
         setProgress(100);
+        setUrl("");
       } else {
         // Mock fallback for browser environment
         setStatus("Mocking download... (Electron not detected)");
@@ -57,22 +61,18 @@ export default function Home() {
           if (currentProgress === 100) {
             clearInterval(interval);
             setStatus("Download complete");
-            setTimeout(() => {
-              setIsFetching(false);
-              setUrl("");
-            }, 2000);
+            setIsFetching(false);
+            setUrl("");
           }
         }, 500);
-        return;
       }
     } catch (err) {
       console.error(err);
       setStatus(`Error: ${String(err)}`);
     } finally {
-      setTimeout(() => {
+      if ('electron' in window) {
         setIsFetching(false);
-        if (progress >= 100) setUrl("");
-      }, 3000);
+      }
     }
   };
 
@@ -284,7 +284,7 @@ export default function Home() {
           </AnimatePresence>
         </div>
 
-        <div className={`${styles.progressArea} ${isFetching || progress > 0 ? styles.visible : ''}`}>
+        <div className={`${styles.progressArea} ${status ? styles.visible : ''}`}>
           <div className={styles.track}>
             <div className={styles.bar} style={{ width: `${progress}%` }} />
           </div>
@@ -300,11 +300,15 @@ export default function Home() {
 
   return (
     <>
-      <div className="web-only" style={{ height: '100vh', width: '100vw', overflow: 'auto' }}>
-        <LandingPage />
-      </div>
+      {process.env.NEXT_PUBLIC_VIDDAX_DESKTOP !== 'true' && (
+        <div className="web-only" style={{ height: '100vh', width: '100vw', overflow: 'auto' }}>
+          <LandingPage />
+        </div>
+      )}
       <div className="electron-only" style={{ height: '100%', width: '100%' }}>
-        {isSettingsOpen ? <SettingsPanel onClose={() => setIsSettingsOpen(false)} /> : appUI}
+        <Suspense fallback={appUI}>
+          {isSettingsOpen ? <SettingsPanel onClose={() => setIsSettingsOpen(false)} /> : appUI}
+        </Suspense>
       </div>
     </>
   );

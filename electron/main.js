@@ -32,12 +32,14 @@ function createWindow() {
   } else {
     loadURL(mainWindow);
   }
+  return mainWindow;
 }
 
 function autoUpdateYtdlp() {
   try {
     const ytdlpPath = getBinPath('yt-dlp.exe');
     const updateProc = spawn(ytdlpPath, ['-U']);
+    updateProc.on('error', (err) => console.error('Failed to start yt-dlp update:', err));
     updateProc.stdout.on('data', (d) => console.log(`yt-dlp update: ${d}`));
     updateProc.stderr.on('data', (d) => console.error(`yt-dlp update err: ${d}`));
   } catch (err) {
@@ -47,12 +49,14 @@ function autoUpdateYtdlp() {
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);
-  createWindow();
-
-  // Trigger silent auto-updates on startup
-  autoUpdateYtdlp();
+  const mainWindow = createWindow();
   if (!isDev) {
-    autoUpdater.checkForUpdatesAndNotify();
+    mainWindow.webContents.once('did-finish-load', () => {
+      autoUpdateYtdlp();
+      autoUpdater.checkForUpdatesAndNotify().catch((err) => {
+        console.error('Failed to check for Viddax updates:', err);
+      });
+    });
   }
 
   app.on('activate', () => {
