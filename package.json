@@ -67,7 +67,7 @@
     },
     "nsis": {
       "include": "installer/windows.nsh",
-      "artifactName": "Viddax v${version} Installer.${ext}",
+      "artifactName": "Viddax-v${version}-Installer.${ext}",
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "runAfterFinish": true
