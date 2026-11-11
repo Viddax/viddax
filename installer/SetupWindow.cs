@@ -91,7 +91,7 @@ internal sealed class SetupWindow : Form
         close.Click += delegate { Dismiss(); };
         CancelButton = close;
 
-        heading = AddLabel(uninstall ? "Uninstall Viddax" : "", 64, 147, 572, 42, 19, FontStyle.Bold, Color.White);
+        heading = AddLabel(uninstall ? "Uninstall Viddax" : "", 64, 137, 572, 34, 19, FontStyle.Bold, Color.White);
         heading.TextAlign = ContentAlignment.MiddleCenter;
         description = AddLabel(uninstall ? "Remove the app and its shortcuts from this PC?" : "",
             94, uninstall ? 209 : 352, uninstall ? 512 : 290, 54, 11, FontStyle.Regular, Muted);
@@ -255,7 +255,7 @@ internal sealed class SetupWindow : Form
             if (!uninstall)
             {
                 try { Process.Start(Path.Combine(directory, "Viddax.exe")); }
-                catch { description.Text = "Open Viddax from the Start menu."; return; }
+                catch { progressStatus.Text = "Open Viddax from the Start menu."; return; }
             }
             Dismiss();
             return;
@@ -316,7 +316,7 @@ internal sealed class SetupWindow : Form
     private void BeginProgress()
     {
         busy = true;
-        action.Visible = locationLabel.Visible = location.Visible = browse.Visible = scope.Visible = false;
+        action.Visible = description.Visible = locationLabel.Visible = location.Visible = browse.Visible = scope.Visible = false;
         close.Enabled = false;
         heading.Text = uninstall ? "Uninstalling Viddax" : "Installing Viddax";
         description.Text = "";
@@ -332,7 +332,7 @@ internal sealed class SetupWindow : Form
     private void ShowSetupControls()
     {
         progress.Visible = progressStatus.Visible = progressElapsed.Visible = false;
-        action.Visible = true;
+        action.Visible = description.Visible = true;
         locationLabel.Visible = location.Visible = !uninstall;
         browse.Visible = scope.Visible = !uninstall && !existing;
         Invalidate();
