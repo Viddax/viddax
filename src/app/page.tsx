@@ -243,7 +243,7 @@ export default function Home() {
                 {mode === 'video' && <Video size={14} strokeWidth={2} />}
                 {mode === 'audio' && <Music size={14} strokeWidth={2} />}
                 {mode === 'image' && <ImageIcon size={14} strokeWidth={2} />}
-                {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                {mode === 'image' ? 'Thumbnail' : mode.charAt(0).toUpperCase() + mode.slice(1)}
               </span>
             </button>
           ))}

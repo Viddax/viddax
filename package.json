@@ -1,6 +1,7 @@
 {
   "name": "myapp",
-  "version": "1.1.4",
+  "version": "1.1.5",
+  "author": "NerdBlud",
   "private": true,
   "main": "electron/main.js",
   "scripts": {

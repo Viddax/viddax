@@ -12,11 +12,15 @@ contextBridge.exposeInMainWorld('electron', {
   maximizeWindow: () => ipcRenderer.send('window-maximize'),
   closeWindow: () => ipcRenderer.send('window-close'),
   
-  // Auto Updater
-  onUpdateAvailable: (callback) => ipcRenderer.on('update-available', (event, info) => callback(info)),
-  onUpdateProgress: (callback) => ipcRenderer.on('update-progress', (event, progressObj) => callback(progressObj)),
-  onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', (event, info) => callback(info)),
-  restartApp: () => ipcRenderer.send('restart-app')
+  getUpdateState: () => ipcRenderer.invoke('get-app-update-state'),
+  checkForUpdate: () => ipcRenderer.invoke('check-app-update'),
+  installUpdate: () => ipcRenderer.invoke('install-app-update'),
+  openReleaseNotes: () => ipcRenderer.invoke('open-app-release-notes'),
+  onUpdateState: (callback) => {
+    const listener = (_event, state) => callback(state);
+    ipcRenderer.on('app-update-state', listener);
+    return () => ipcRenderer.removeListener('app-update-state', listener);
+  },
 });
 
 window.addEventListener('DOMContentLoaded', () => {

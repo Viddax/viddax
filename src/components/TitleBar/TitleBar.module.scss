@@ -1,8 +1,8 @@
 .titlebar {
   display: flex;
   height: 32px;
-  background-color: var(--bg-primary); // Inherit the dark mode background
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-color);
+  border-bottom: 1px solid var(--border-subtle);
   user-select: none;
   flex-shrink: 0;
   z-index: 9999;
@@ -16,17 +16,11 @@
   padding-left: 16px;
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .brand {
   font-family: var(--font-logo);
   font-size: 12px;
   font-weight: 700;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
@@ -37,58 +31,61 @@
   align-items: center;
 }
 
-.updatePill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 12px;
-  height: 22px;
-  border-radius: 12px;
-  background-color: rgba(255, 255, 255, 0.1);
-  color: var(--text-secondary);
-  font-size: 11px;
-  font-weight: 500;
+.updates {
+  position: relative;
   margin-right: 8px;
-}
+  color: var(--text-main);
+  font-size: 12px;
 
-.updateReadyPill {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 22px;
-  border-radius: 12px;
-  background-color: #22c55e;
-  color: #000;
-  font-size: 11px;
-  font-weight: 600;
-  border: none;
-  margin-right: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
+  summary {
+    list-style: none;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: var(--surface-color);
+    cursor: pointer;
+  }
 
-  &:hover {
-    background-color: #16a34a;
-    transform: scale(1.02);
+  summary.ready {
+    background: #22c55e;
+    color: #000;
   }
 }
 
-.pulse {
-  animation: pulse 2s infinite;
+.updatePanel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 155px));
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-color);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22);
+
+  p {
+    margin: 8px 0 12px;
+  }
 }
 
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
-}
+.updateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 
-.spinHover {
-  transition: transform 0.3s ease;
-}
+  button {
+    padding: 5px 8px;
+    color: inherit;
+    background: var(--surface-color);
+    border: 1px solid var(--border-subtle);
+    border-radius: 5px;
+    cursor: pointer;
+  }
 
-.updateReadyPill:hover .spinHover {
-  transform: rotate(180deg);
+  button:disabled {
+    opacity: 0.55;
+    cursor: default;
+  }
 }
 
 .controlButton {
@@ -99,13 +96,13 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    color: var(--text-main);
   }
 
   &:active {

@@ -1,15 +1,28 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { app, BrowserWindow, ipcMain, Menu } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 const { autoUpdater } = require('electron-updater');
-const { buildYtdlpArgs } = require('./command_builder');
+const { downloadMedia } = require('./download_engine');
+const { createUpdateController } = require('./app_updates');
 const serve = require('electron-serve').default || require('electron-serve');
 const os = require('os');
 
 const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
 const isDev = process.env.NODE_ENV === 'development';
+let activeDownloads = 0;
+const updates = createUpdateController({
+  updater: autoUpdater,
+  currentVersion: app.getVersion(),
+  enabled: app.isPackaged && process.platform === 'win32',
+  canRestart: () => activeDownloads === 0,
+  publish: (state) => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (!window.webContents.isDestroyed()) window.webContents.send('app-update-state', state);
+    }
+  },
+});
 
 // Disable hardware acceleration to prevent GPU crashes on some systems
 app.disableHardwareAcceleration();
@@ -53,9 +66,8 @@ app.whenReady().then(() => {
   if (!isDev) {
     mainWindow.webContents.once('did-finish-load', () => {
       autoUpdateYtdlp();
-      autoUpdater.checkForUpdatesAndNotify().catch((err) => {
-        console.error('Failed to check for Viddax updates:', err);
-      });
+      void updates.check();
+      setInterval(() => void updates.check(), 60 * 60 * 1000).unref();
     });
   }
 
@@ -79,140 +91,28 @@ const getBinPath = (filename) => {
   return path.join(base, filename);
 };
 
-ipcMain.handle('execute_download', (event, { id, url, settings }) => {
-  return new Promise((resolve, reject) => {
-    try {
-      const binDir = app.isPackaged 
-        ? path.join(process.resourcesPath, 'app.asar.unpacked', 'bin')
-        : path.join(__dirname, '../bin');
-      const ytdlpPath = getBinPath('yt-dlp.exe');
-      
-      // Override relative path to absolute path to fix production read-only errors
-      let resolvedPath = settings.defaultDownloadPath;
-      if (!resolvedPath || resolvedPath === './downloads' || resolvedPath === 'downloads') {
-        resolvedPath = path.join(os.homedir(), 'Downloads', 'Viddax');
-      }
-      settings.defaultDownloadPath = resolvedPath;
-      
-      // Ensure the download directory exists! If it doesn't, yt-dlp exits with code 1.
-      const fs = require('fs');
-      if (!fs.existsSync(resolvedPath)) {
-        fs.mkdirSync(resolvedPath, { recursive: true });
-      }
-      
-      const initialArgs = buildYtdlpArgs(url, settings);
-      
-      // Point yt-dlp to directory containing both ffmpeg and ffprobe
-      initialArgs.push('--ffmpeg-location', binDir);
-
-      const runProcess = (processArgs, isRetry = false) => {
-        const child = spawn(ytdlpPath, processArgs, {
-          env: {
-            ...process.env,
-            ELECTRON_RUN_AS_NODE: '1'
-          }
-        });
-
-        // Regex to match [download] 45.3% of ~50.00MiB at 2.00MiB/s ETA 00:25
-        const re = /\[download\]\s+([0-9.]+)% .*?at\s+([0-9.a-zA-Z/]+)\s+ETA\s+([0-9:]+)/;
-
-        child.stdout.on('data', (data) => {
-          const line = data.toString();
-          const match = line.match(re);
-
-          if (match) {
-            event.sender.send('download-progress', {
-              id,
-              status: 'Downloading...',
-              progress_percent: parseFloat(match[1]),
-              speed: match[2],
-              eta: match[3],
-            });
-          } else if (line.includes('[ExtractAudio]') || line.includes('[Merger]') || line.includes('[ffmpeg]')) {
-            event.sender.send('download-progress', {
-              id,
-              status: 'Processing (Merging/Audio)...',
-              progress_percent: 100.0,
-              speed: '',
-              eta: '',
-            });
-          } else if (line.includes('Writing video thumbnail') || line.includes('[ThumbnailsConvertor]')) {
-            event.sender.send('download-progress', {
-              id,
-              status: 'Saving thumbnail image...',
-              progress_percent: 100.0,
-              speed: '',
-              eta: '',
-            });
-          }
-        });
-
-        let lastStderr = '';
-
-        child.stderr.on('data', (data) => {
-          const errorText = data.toString();
-          console.error(`yt-dlp stderr [${id}]: ${errorText}`);
-          if (!errorText.includes('has already been downloaded') && !errorText.includes('ExtractAudio')) {
-            lastStderr = errorText.trim().substring(0, 150);
-          }
-        });
-
-        child.on('close', (code) => {
-          if (code === 0) {
-            event.sender.send('download-progress', {
-              id,
-              status: 'Completed',
-              progress_percent: 100.0,
-              speed: '',
-              eta: '',
-            });
-            
-            // Pop the explorer up at the downloaded location!
-            require('electron').shell.openPath(resolvedPath);
-            resolve();
-          } else {
-            // Gracefully retry without cookies if cookie extraction caused the failure
-            const lowerError = lastStderr.toLowerCase();
-            const isCookieError = lowerError.includes('cookie') || 
-                                  lowerError.includes('unsupported platform') || 
-                                  lowerError.includes('could not find');
-            const cookieIdx = processArgs.indexOf('--cookies-from-browser');
-
-            if (!isRetry && cookieIdx !== -1 && isCookieError) {
-              console.warn(`[${id}] Cookie extraction failed, falling back without cookies...`);
-              event.sender.send('download-progress', {
-                id,
-                status: 'Browser cookies failed, retrying directly...',
-                progress_percent: 0,
-                speed: '',
-                eta: '',
-              });
-              const retryArgs = [...processArgs];
-              retryArgs.splice(cookieIdx, 2);
-              return runProcess(retryArgs, true);
-            }
-
-            event.sender.send('download-progress', {
-              id,
-              status: `Error: ${code} ${lastStderr ? '- ' + lastStderr : ''}`,
-              progress_percent: 0,
-              speed: '',
-              eta: '',
-            });
-            reject(`yt-dlp exited with code ${code}. ${lastStderr}`);
-          }
-        });
-
-        child.on('error', (err) => {
-          reject(`Failed to start yt-dlp: ${err.message}`);
-        });
-      };
-
-      runProcess(initialArgs);
-    } catch (e) {
-      reject(`Failed to setup download engine: ${e.message}`);
+ipcMain.handle('execute_download', async (event, { id, url, settings }) => {
+  const report = (status, progress_percent, speed = '', eta = '') => {
+    if (!event.sender.isDestroyed()) {
+      event.sender.send('download-progress', { id, status, progress_percent, speed, eta });
     }
-  });
+  };
+
+  const configuredPath = settings.defaultDownloadPath;
+  const directory = !configuredPath || configuredPath === './downloads' || configuredPath === 'downloads'
+    ? path.join(os.homedir(), 'Downloads', 'Viddax')
+    : configuredPath;
+  if (updates.getState().phase === 'installing') throw new Error('Viddax is restarting to update.');
+  activeDownloads += 1;
+  try {
+    const output = await downloadMedia({
+      url, settings, binary: getBinPath('yt-dlp.exe'), directory, report,
+    });
+    report('Completed', 100);
+    void shell.openPath(output);
+  } finally {
+    activeDownloads -= 1;
+  }
 });
 
 // Custom window controls IPC
@@ -237,19 +137,12 @@ ipcMain.on('window-close', (event) => {
   if (win) win.close();
 });
 
-// Auto-updater IPC forwarding
-autoUpdater.on('update-available', (info) => {
-  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-available', info));
-});
-
-autoUpdater.on('download-progress', (progressObj) => {
-  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-progress', progressObj));
-});
-
-autoUpdater.on('update-downloaded', (info) => {
-  BrowserWindow.getAllWindows().forEach(w => w.webContents.send('update-downloaded', info));
-});
-
-ipcMain.on('restart-app', () => {
-  autoUpdater.quitAndInstall(false, true);
+ipcMain.handle('get-app-update-state', () => updates.getState());
+ipcMain.handle('check-app-update', () => updates.check());
+ipcMain.handle('install-app-update', () => updates.install());
+ipcMain.handle('open-app-release-notes', () => {
+  const { version, currentVersion } = updates.getState();
+  const release = version || currentVersion;
+  const releases = 'https://github.com/viddax/viddax/releases';
+  return shell.openExternal(/^\d+\.\d+\.\d+$/.test(release) ? `${releases}/tag/v${release}` : releases);
 });

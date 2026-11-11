@@ -150,5 +150,5 @@ Viddax bridges the gap between modern web development and native desktop applica
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 <div align="center">
-  <sub>Built with ❤️ by Nerdblud</sub>
+  <sub>Built with ❤️ by NerdBlud</sub>
 </div>
