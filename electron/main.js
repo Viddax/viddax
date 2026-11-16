@@ -2,8 +2,9 @@
 const { app, BrowserWindow, ipcMain, Menu, shell } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
+const { appendFile } = require('node:fs/promises');
 const { autoUpdater } = require('electron-updater');
-const { downloadMedia } = require('./download_engine');
+const { downloadMedia, savedFile } = require('./download_engine');
 const { createUpdateController } = require('./app_updates');
 const serve = require('electron-serve').default || require('electron-serve');
 const os = require('os');
@@ -11,12 +12,26 @@ const os = require('os');
 const loadURL = serve({ directory: path.join(__dirname, '../out') });
 
 const isDev = process.env.NODE_ENV === 'development';
-let activeDownloads = 0;
+const downloads = new Map();
+const completedDownloads = new WeakMap();
+const defaultDirectory = path.join(os.homedir(), 'Downloads', 'Viddax');
+const measuredWindows = new WeakSet();
+const mediaExtensions = new Set(['.mp4', '.m4a', '.mkv', '.webm', '.mov', '.avi', '.flv', '.ts',
+  '.mp3', '.aac', '.ogg', '.opus', '.wav', '.flac', '.m4b', '.aiff', '.mka', '.weba',
+  '.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+function recordTiming(name, milliseconds) {
+  const log = process.env.VIDDAX_PERF_LOG;
+  if (log && milliseconds !== null) {
+    void appendFile(log, JSON.stringify({ name, milliseconds, version: app.getVersion() }) + '\n')
+      .catch((error) => console.error('Could not write performance log:', error.message));
+  }
+}
 const updates = createUpdateController({
   updater: autoUpdater,
   currentVersion: app.getVersion(),
   enabled: app.isPackaged && process.platform === 'win32',
-  canRestart: () => activeDownloads === 0,
+  canRestart: () => downloads.size === 0,
   publish: (state) => {
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.webContents.isDestroyed()) window.webContents.send('app-update-state', state);
@@ -91,28 +106,71 @@ const getBinPath = (filename) => {
   return path.join(base, filename);
 };
 
+ipcMain.handle('download-context', (event) => {
+  if (!measuredWindows.has(event.sender)) {
+    measuredWindows.add(event.sender);
+    recordTiming('launch_to_ready', Math.round(process.uptime() * 1000));
+  }
+  return defaultDirectory;
+});
+
 ipcMain.handle('execute_download', async (event, { id, url, settings }) => {
+  const sender = event.sender;
+  if (typeof id !== 'string' || typeof url !== 'string' || !settings || typeof settings !== 'object') {
+    return { status: 'failed', message: 'Enter a valid media link and try again.' };
+  }
+  if (downloads.has(sender)) return { status: 'failed', message: 'A download is already in progress.' };
+  if (updates.getState().phase === 'installing') return { status: 'failed', message: 'Viddax is restarting to update.' };
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  downloads.set(sender, { id, controller });
+  sender.once('destroyed', cancel);
+  completedDownloads.delete(sender);
+
   const report = (status, progress_percent, speed = '', eta = '') => {
-    if (!event.sender.isDestroyed()) {
-      event.sender.send('download-progress', { id, status, progress_percent, speed, eta });
+    if (!sender.isDestroyed() && !controller.signal.aborted) {
+      sender.send('download-progress', { id, status, progress_percent, speed, eta });
     }
   };
 
   const configuredPath = settings.defaultDownloadPath;
   const directory = !configuredPath || configuredPath === './downloads' || configuredPath === 'downloads'
-    ? path.join(os.homedir(), 'Downloads', 'Viddax')
+    ? defaultDirectory
     : configuredPath;
-  if (updates.getState().phase === 'installing') throw new Error('Viddax is restarting to update.');
-  activeDownloads += 1;
   try {
-    const output = await downloadMedia({
-      url, settings, binary: getBinPath('yt-dlp.exe'), directory, report,
+    const result = await downloadMedia({
+      url, settings, binary: getBinPath('yt-dlp.exe'), directory, report, signal: controller.signal,
     });
-    report('Completed', 100);
-    void shell.openPath(output);
+    controller.signal.throwIfAborted();
+    completedDownloads.set(sender, { id, ...result });
+    recordTiming('download_to_first_progress', result.firstProgressMs);
+    recordTiming('download_to_file_saved', result.fileSavedMs);
+    return { status: 'completed', directory: result.directory, warning: result.warning,
+      files: result.files.map(({ name, format }) => ({ name, format })) };
+  } catch (error) {
+    return controller.signal.aborted ? { status: 'cancelled' } : { status: 'failed', message: error.message };
   } finally {
-    activeDownloads -= 1;
+    downloads.delete(sender);
+    sender.removeListener('destroyed', cancel);
   }
+});
+
+ipcMain.handle('cancel-download', (event, id) => {
+  const job = downloads.get(event.sender);
+  if (job?.id === id) job.controller.abort();
+});
+
+ipcMain.handle('show-downloaded-file', async (event, { id, index, reveal }) => {
+  const result = completedDownloads.get(event.sender);
+  const recorded = result && result.id === id && Number.isInteger(index) ? result.files[index] : null;
+  const file = recorded && await savedFile(result.directory, recorded.path);
+  if (!file || file.path !== recorded.path) return 'This file was moved or deleted.';
+  if (reveal) {
+    shell.showItemInFolder(file.path);
+    return '';
+  }
+  if (!mediaExtensions.has(path.extname(file.path).toLowerCase())) return 'Use Show in folder to open this file.';
+  return await shell.openPath(file.path) ? 'Windows couldn’t open this file. Try opening it from its folder.' : '';
 });
 
 // Custom window controls IPC

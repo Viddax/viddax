@@ -5,7 +5,7 @@ import { Settings, Video, Music, Globe, Image as ImageIcon, Sun, Moon } from "lu
 import { motion, AnimatePresence } from "framer-motion";
 import { LandingPage } from "@/components/LandingPage/LandingPage";
 import { useSettingsStore } from "@/store/useSettingsStore";
-import { useDownloadProgress } from "@/hooks/useDownloadProgress";
+import { useDownloadProgress, type DownloadMode } from "@/hooks/useDownloadProgress";
 import styles from "./page.module.scss";
 
 const SettingsPanel = lazy(() =>
@@ -16,63 +16,29 @@ export default function Home() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPlatformsOpen, setIsPlatformsOpen] = useState(false);
   const [url, setUrl] = useState("");
-  const [isFetching, setIsFetching] = useState(false);
-  const [downloadMode, setDownloadMode] = useState<'video' | 'audio' | 'image'>('video');
+  const [fullPlaylist, setFullPlaylist] = useState(false);
+  const [downloadMode, setDownloadMode] = useState<DownloadMode>('video');
   const store = useSettingsStore();
-  const { progress, status, speed, eta, setProgress, setStatus } = useDownloadProgress();
+  const { defaultDirectory, progress, result, busy, cancelling, actionError, download, cancel, showFile, clearFeedback } = useDownloadProgress();
 
-  const handleFetch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!url.trim()) return;
-    
-    setIsFetching(true);
-    setProgress(0);
-    setStatus("Starting download engine...");
-    
-    try {
-      if (typeof window !== 'undefined' && 'electron' in window) {
-        // Strip functions from store to prevent IPC cloning errors
-        const settingsPayload = JSON.parse(JSON.stringify(store));
-        settingsPayload.downloadMode = downloadMode;
-        
-        // Run real Electron command
-        // @ts-expect-error - electron is injected by preload
-        await window.electron.executeDownload({ 
-          id: Date.now().toString(),
-          url, 
-          settings: settingsPayload 
-        });
-        setStatus("Download complete!");
-        setProgress(100);
-        setUrl("");
-      } else {
-        // Mock fallback for browser environment
-        setStatus("Mocking download... (Electron not detected)");
-        let currentProgress = 0;
-        const interval = setInterval(() => {
-          currentProgress += Math.random() * 15;
-          if (currentProgress > 100) currentProgress = 100;
-          setProgress(currentProgress);
-          
-          if (currentProgress > 30 && currentProgress < 60) setStatus("Downloading video stream...");
-          else if (currentProgress >= 60 && currentProgress < 90) setStatus("Downloading audio stream...");
-          else if (currentProgress >= 90 && currentProgress < 100) setStatus("Merging streams...");
-          
-          if (currentProgress === 100) {
-            clearInterval(interval);
-            setStatus("Download complete");
-            setIsFetching(false);
-            setUrl("");
-          }
-        }, 500);
-      }
-    } catch (err) {
-      console.error(err);
-      setStatus(`Error: ${String(err)}`);
-    } finally {
-      if ('electron' in window) {
-        setIsFetching(false);
-      }
+  const customDirectory = store.defaultDownloadPath;
+  const destination = !customDirectory || ['downloads', './downloads'].includes(customDirectory)
+    ? defaultDirectory
+    : customDirectory;
+  const format = downloadMode === 'image' ? 'JPG'
+    : downloadMode === 'audio' ? (store.audioFormat === 'best' ? 'Best available audio' : store.audioFormat.toUpperCase())
+    : `${store.videoQuality} · ${store.youtubeContainer === 'auto' ? 'Automatic container' : store.youtubeContainer.toUpperCase()}`;
+
+  const handleFetch = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!url.trim() || busy) return;
+    const { setSetting, reset, ...settings } = store;
+    void setSetting;
+    void reset;
+    const outcome = await download(url.trim(), { ...settings, downloadMode, fullPlaylist });
+    if (outcome?.status === 'completed' && !outcome.warning) {
+      setUrl('');
+      setFullPlaylist(false);
     }
   };
 
@@ -105,7 +71,7 @@ export default function Home() {
 
   const detectedPlatform = getDetectedPlatform(url);
 
-  const getAvailableModes = (platform: string | null): Array<'video' | 'audio' | 'image'> => {
+  const getAvailableModes = (platform: string | null): DownloadMode[] => {
     switch (platform) {
       case 'Spotify':
       case 'SoundCloud':
@@ -231,6 +197,7 @@ export default function Home() {
               className={`${styles.modeButton} ${downloadMode === mode ? styles.active : ''}`}
               onClick={() => setDownloadMode(mode)}
               type="button"
+              disabled={busy}
             >
               {downloadMode === mode && (
                 <motion.div
@@ -255,21 +222,25 @@ export default function Home() {
               type="url" 
               placeholder="Paste media URL here..." 
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              disabled={isFetching}
+              onChange={(e) => {
+                setUrl(e.target.value);
+                setFullPlaylist(false);
+                if (result?.status !== 'completed') clearFeedback();
+              }}
+              disabled={busy}
               required
             />
             <button 
               type="submit" 
               className={styles.fetchButton}
-              disabled={isFetching || !url.trim()}
+              disabled={busy || !url.trim()}
             >
-              Fetch
+              {result && result.status !== 'completed' ? 'Retry' : 'Fetch'}
             </button>
           </form>
 
           <AnimatePresence>
-            {detectedPlatform && !isFetching && progress === 0 && (
+            {detectedPlatform && !busy && !result && (
               <motion.div
                 className={styles.platformDetector}
                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
@@ -277,23 +248,65 @@ export default function Home() {
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ type: "spring", stiffness: 400, damping: 25 }}
               >
-                <div className={`${styles.glowingDot} ${status.toLowerCase().includes('error') ? styles.error : ''}`} />
+                <div className={`${styles.glowingDot}`} />
                 <span><strong>{detectedPlatform}</strong> link detected</span>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        <div className={`${styles.progressArea} ${status ? styles.visible : ''}`}>
-          <div className={styles.track}>
-            <div className={styles.bar} style={{ width: `${progress}%` }} />
+        <div className={styles.downloadOptions}>
+          <div className={styles.downloadDestination}>
+            <strong>{format}</strong>
+            {destination && <span title={destination}>{destination}</span>}
           </div>
-          <div className={styles.status}>
-            <span>{status || "Ready"}</span>
-            {speed && <span className={styles.meta}>{speed}</span>}
-            {eta && <span className={styles.meta}>ETA: {eta}</span>}
-          </div>
+          <label className={styles.playlistOption}>
+            <input type="checkbox" checked={fullPlaylist} disabled={busy}
+              onChange={(event) => setFullPlaylist(event.target.checked)} />
+            Full playlist
+          </label>
         </div>
+
+        {(busy || result) && (
+          <section className={styles.downloadCard} aria-label="Download status">
+            {busy && (
+              <>
+                <div className={styles.downloadStatus}>
+                  <span role="status">{cancelling ? 'Cancelling…' : progress?.status}</span>
+                  <button type="button" disabled={cancelling} onClick={() => void cancel()}>Cancel</button>
+                </div>
+                <progress max={100} value={progress?.progress_percent || undefined} aria-label="Download progress" />
+                {(progress?.speed || progress?.eta) && (
+                  <div className={styles.downloadDetails}>
+                    {progress.speed && <span>{progress.speed}</span>}
+                    {progress.eta && <span>ETA {progress.eta}</span>}
+                  </div>
+                )}
+              </>
+            )}
+            {result?.status === 'completed' && (
+              <>
+                <strong role="status">{result.files.length === 1 ? 'File saved' : `${result.files.length} files saved`}</strong>
+                <span className={styles.savedDirectory}>{result.directory}</span>
+                {result.warning && <p role="alert">{result.warning}</p>}
+                <ul className={styles.savedFiles}>
+                  {result.files.map((file, index) => (
+                    <li key={index}>
+                      <span title={file.name}>{file.name}{file.format && <small> · {file.format}</small>}</span>
+                      <div className={styles.downloadFileActions}>
+                        <button type="button" onClick={() => void showFile(index, false)}>Open file</button>
+                        <button type="button" onClick={() => void showFile(index, true)}>Show in folder</button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {result?.status === 'failed' && <p role="alert">{result.message}</p>}
+            {result?.status === 'cancelled' && <p role="status">Download cancelled.</p>}
+            {actionError && <p role="alert">{actionError}</p>}
+          </section>
+        )}
       </div>
     </main>
   );

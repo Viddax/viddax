@@ -3,6 +3,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
   executeDownload: (args) => ipcRenderer.invoke('execute_download', args),
+  getDownloadContext: () => ipcRenderer.invoke('download-context'),
+  cancelDownload: (id) => ipcRenderer.invoke('cancel-download', id),
+  showDownloadedFile: (args) => ipcRenderer.invoke('show-downloaded-file', args),
   onDownloadProgress: (callback) => {
     const listener = (_event, data) => callback(data);
     ipcRenderer.on('download-progress', listener);

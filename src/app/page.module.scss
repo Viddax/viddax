@@ -271,89 +271,94 @@
 }
 
 // ─── Progress ───────────────────────────────────────────────────────
-.progressArea {
-  width: 100%;
-  max-width: 480px;
+.downloadOptions,
+.downloadStatus,
+.downloadDetails,
+.savedFiles li {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-  opacity: 0;
-  transform: translateY(12px) scale(0.98);
-  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-  
-  &.visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
-  
-  .track {
-    width: 100%;
-    height: 3px;
-    background-color: var(--surface-color);
-    border-radius: 9999px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.downloadOptions {
+  width: 100%;
+  font-size: 0.8rem;
+  margin-top: -16px;
+  padding: 0 12px;
+}
+
+.downloadDestination {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+
+  span {
     overflow: hidden;
-    position: relative;
-
-    &::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.15) 50%,
-        transparent 100%
-      );
-      animation: shimmer 2s infinite linear;
-    }
-  }
-  
-  .bar {
-    position: absolute;
-    top: 0;
-    left: 0;
-    height: 100%;
-    background: var(--text-main);
-    border-radius: 9999px;
-    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 0 12px rgba(128, 128, 128, 0.2);
-
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--text-main);
-      box-shadow: 0 0 8px var(--text-main), 0 0 20px var(--text-main);
-      animation: pulse 1.5s ease-in-out infinite;
-    }
-  }
-  
-  .status {
-    font-size: 0.8rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--text-muted);
-    text-align: center;
-    font-weight: 500;
-    letter-spacing: 0.02em;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    animation: statusFade 0.4s ease forwards;
-  }
-
-  .meta {
-    opacity: 0.5;
-    font-size: 0.75rem;
-    font-variant-numeric: tabular-nums;
   }
 }
+
+.playlistOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  cursor: pointer;
+
+  input { accent-color: var(--text-main); }
+}
+
+.downloadCard {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 20px;
+  background: var(--surface-color);
+  font-size: 0.875rem;
+
+  p { overflow-wrap: anywhere; }
+  progress { width: 100%; height: 6px; accent-color: var(--text-main); }
+
+  button {
+    border: 1px solid var(--border-subtle);
+    border-radius: 999px;
+    padding: 6px 10px;
+    white-space: nowrap;
+
+    &:hover { background: var(--surface-color); }
+    &:disabled { opacity: 0.55; cursor: default; }
+  }
+}
+
+.savedDirectory { color: var(--text-muted); overflow-wrap: anywhere; }
+
+.downloadDetails {
+  justify-content: flex-start;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.savedFiles {
+  list-style: none;
+  max-height: 200px;
+  overflow: auto;
+
+  li {
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-top: 1px solid var(--border-subtle);
+
+    span { overflow-wrap: anywhere; }
+    small { color: var(--text-muted); }
+  }
+}
+
+.downloadFileActions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 // ─── Keyframes ──────────────────────────────────────────────────────
 @keyframes fadeIn {

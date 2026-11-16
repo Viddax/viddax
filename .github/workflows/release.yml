@@ -20,7 +20,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install Dependencies
@@ -30,10 +30,43 @@ jobs:
         run: npm run electron:build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+
+      - name: Verify Windows installer and update
+        shell: pwsh
+        run: |
+          $prior = gh release view --json tagName --jq '.tagName'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release download $prior --pattern '*-Installer.exe' --dir previous-release
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $previous = Get-ChildItem previous-release -Filter '*-Installer.exe'
+          $candidate = Get-ChildItem release -Filter '*-Installer.exe'
+          ./installer/verify-windows.ps1 -Installer $candidate.FullName -PreviousInstaller $previous.FullName
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify NerdBlud Authenticode signatures
+        shell: pwsh
+        env:
+          SIGNING_CONFIGURED: ${{ secrets.WIN_CSC_LINK != '' }}
+        run: |
+          if ($env:SIGNING_CONFIGURED -ne 'true') {
+            Write-Warning 'Publishing an unsigned Windows build because no signing credentials are configured.'
+            exit 0
+          }
+          $candidate = Get-ChildItem release -Filter '*-Installer.exe'
+          foreach ($file in @($candidate.FullName, 'release/win-unpacked/Viddax.exe', 'build/viddax-setup-ui.exe')) {
+            $signature = Get-AuthenticodeSignature -FilePath $file
+            if ($signature.Status -ne 'Valid' -or $signature.SignerCertificate.GetNameInfo('SimpleName', $false) -cne 'NerdBlud') {
+              throw "Expected a trusted NerdBlud code-signing signature on $file."
+            }
+          }
 
       - name: Create GitHub Release and Upload EXE
         uses: softprops/action-gh-release@v2
         with:
+          fail_on_unmatched_files: true
           files: |
             release/*.exe
             release/latest.yml

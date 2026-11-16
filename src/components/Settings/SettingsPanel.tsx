@@ -21,10 +21,9 @@ const FilteredSection = ({ title, children, searchQuery }: { title: string, chil
     
     if (!isTitleMatch) {
       filtered = filtered.filter(child => {
-        if (!React.isValidElement(child)) return false;
-        const element = child as React.ReactElement;
-        const label = element.props?.label || "";
-        const description = element.props?.description || "";
+        if (!React.isValidElement<{ label?: string; description?: string }>(child)) return false;
+        const label = child.props.label || "";
+        const description = child.props.description || "";
         return label.toLowerCase().includes(q) || description.toLowerCase().includes(q);
       });
     }
@@ -152,7 +151,7 @@ export function SettingsPanel({ onClose }: { onClose: () => void }) {
               const parsed = JSON.parse(e.target?.result as string);
               Object.keys(parsed).forEach(key => {
                 if (key !== 'setSetting' && key !== 'reset') {
-                  store.setSetting(key as keyof SettingsState, parsed[key]);
+                  store.setSetting(key as keyof Omit<SettingsState, 'setSetting' | 'reset'>, parsed[key]);
                 }
               });
             } catch {

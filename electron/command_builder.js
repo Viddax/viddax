@@ -11,7 +11,7 @@ function buildYtdlpArgs(url, settings) {
   const rateLimited = settings.rateLimit && settings.rateLimit !== 'unlimited';
   const imageMode = settings.downloadMode === 'image';
   const args = [
-    '--no-playlist',
+    ...(settings.fullPlaylist ? ['--yes-playlist'] : ['--no-playlist', '--playlist-items', '1']),
     '--newline', '--no-colors', '--progress-delta', '0.25',
     '--progress-template', 'download:VIDDAX_PROGRESS:%(progress._percent_str)s|%(progress._speed_str)s|%(progress._eta_str)s',
     '--js-runtimes', `node:${process.execPath}`,
@@ -19,7 +19,9 @@ function buildYtdlpArgs(url, settings) {
 
   if (imageMode) {
     args.push('--write-thumbnail', '--skip-download', '--convert-thumbnails', 'jpg');
+    args.push('--print', 'after_video:VIDDAX_THUMBS:%(thumbnails)j', '--no-quiet');
   } else {
+    args.push('--no-simulate', '--progress', '--print', 'after_move:VIDDAX_FILE:%(filepath)j');
     args.push('--concurrent-fragments', rateLimited ? '1' : '4');
     if (settings.downloadMode === 'audio') {
       const format = settings.audioFormat === 'ogg' ? 'vorbis' : settings.audioFormat || 'best';
